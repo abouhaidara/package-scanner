@@ -333,7 +333,7 @@
         
         {% if result.success %}
             <div class="volume-highlight">
-                <h2>{{ "%.2f"|format(result.dimensions.volume_liters) }} L</h2>
+                <h2>{{ "%.4f"|format(result.dimensions.volume_cubic_feet) }} ft³</h2>
                 <p>Total Volume</p>
             </div>
             
@@ -342,19 +342,19 @@
                     <h3>📏 Dimensions</h3>
                     <div class="dimension-item">
                         <span class="dimension-label">Width:</span>
-                        <span class="dimension-value">{{ result.dimensions.width_cm }} cm</span>
+                        <span class="dimension-value">{{ "%.2f"|format(result.dimensions.width_in) }}"</span>
                     </div>
                     <div class="dimension-item">
                         <span class="dimension-label">Height:</span>
-                        <span class="dimension-value">{{ result.dimensions.height_cm }} cm</span>
+                        <span class="dimension-value">{{ "%.2f"|format(result.dimensions.height_in) }}"</span>
                     </div>
                     <div class="dimension-item">
                         <span class="dimension-label">Depth:</span>
-                        <span class="dimension-value">{{ result.dimensions.depth_cm }} cm</span>
+                        <span class="dimension-value">{{ "%.2f"|format(result.dimensions.depth_in) }}"</span>
                     </div>
                     <div class="dimension-item">
-                        <span class="dimension-label">Volume (cm³):</span>
-                        <span class="dimension-value">{{ result.dimensions.volume_cm3 }} cm³</span>
+                        <span class="dimension-label">Volume:</span>
+                        <span class="dimension-value">{{ "%.4f"|format(result.dimensions.volume_cubic_feet) }} ft³</span>
                     </div>
                 </div>
                 

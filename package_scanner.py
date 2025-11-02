@@ -110,12 +110,24 @@ class PackageVolumeScanner:
             # Calculate volume
             volume_cm3 = width_cm * height_cm * depth_cm
             
+            # Convert cm to inches (1 cm = 0.393701 inches)
+            width_in = width_cm * 0.393701
+            height_in = height_cm * 0.393701
+            depth_in = depth_cm * 0.393701
+            
+            # Convert cm³ to cubic feet (1 cm³ = 0.0000353147 cubic feet)
+            volume_cubic_feet = volume_cm3 * 0.0000353147
+            
             return {
                 'width_cm': round(width_cm, 2),
                 'height_cm': round(height_cm, 2),
                 'depth_cm': round(depth_cm, 2),
+                'width_in': round(width_in, 2),
+                'height_in': round(height_in, 2),
+                'depth_in': round(depth_in, 2),
                 'volume_cm3': round(volume_cm3, 2),
-                'volume_liters': round(volume_cm3 / 1000, 3)
+                'volume_liters': round(volume_cm3 / 1000, 3),
+                'volume_cubic_feet': round(volume_cubic_feet, 4)
             }
             
         except Exception as e:
