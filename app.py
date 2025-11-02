@@ -15,7 +15,10 @@ from package_scanner import PackageVolumeScanner
 from dotenv import load_dotenv
 
 # Setup logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
 # Load environment variables
@@ -55,23 +58,32 @@ def index():
 @app.route('/upload', methods=['POST', 'GET'])
 def upload_file():
     """Handle file upload and processing."""
+    logger.info(f"Upload route called with method: {request.method}")
+    
     # Handle GET requests (shouldn't happen, but handle gracefully)
     if request.method == 'GET':
+        logger.info("GET request to /upload, redirecting to index")
         return redirect(url_for('index'))
     
     # Handle POST requests
+    logger.info("POST request received")
+    
     if 'file' not in request.files:
+        logger.warning("No file in request.files")
         flash('No file selected')
         return redirect(url_for('index'))
     
     file = request.files['file']
+    logger.info(f"File received: {file.filename if file else 'None'}")
     
     if file.filename == '':
+        logger.warning("Empty filename")
         flash('No file selected')
         return redirect(url_for('index'))
     
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
+        logger.info(f"Processing file: {filename}")
         
         # Add timestamp to filename to avoid conflicts
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -79,11 +91,21 @@ def upload_file():
         filename = f"{timestamp}_{name}{ext}"
         
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
+        logger.info(f"Saving file to: {filepath}")
+        
+        try:
+            file.save(filepath)
+            logger.info(f"File saved successfully to {filepath}")
+        except Exception as e:
+            logger.error(f"Error saving file: {e}", exc_info=True)
+            flash(f'Error saving file: {str(e)}')
+            return redirect(url_for('index'))
         
         # Process the package
         try:
+            logger.info("Starting package processing...")
             result = scanner.process_package(filepath)
+            logger.info(f"Processing result: success={result.get('success')}")
             
             if result.get('success'):
                 # Convert timestamp to readable format if it's a Unix timestamp
@@ -92,7 +114,7 @@ def upload_file():
                 elif not isinstance(result.get('timestamp'), str):
                     result['timestamp'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 
-                logger.info(f"Package processed successfully: {result}")
+                logger.info(f"Package processed successfully, rendering results page")
                 return render_template('results.html', result=result)
             else:
                 error_msg = result.get('error', 'Unknown error')
@@ -104,6 +126,7 @@ def upload_file():
             flash(f'Error processing package: {str(e)}')
             return redirect(url_for('index'))
     
+    logger.warning(f"Invalid file type: {file.filename if file else 'None'}")
     flash('Invalid file type. Please upload an image file.')
     return redirect(url_for('index'))
 
