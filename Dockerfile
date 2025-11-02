@@ -35,16 +35,16 @@ COPY . .
 RUN mkdir -p uploads logs
 
 # ---- Runtime config ----
-# Use PORT env variable (Railway, Render, etc. provide this)
-ENV PORT=${PORT:-8000} \
-    FLASK_ENV=production \
+ENV FLASK_ENV=production \
     PYTHONPATH=/app
 
-EXPOSE $PORT
+# Expose default port (Railway will override with PORT env var)
+EXPOSE 8000
 
-# Health check (needs curl installed above)
+# Health check - Railway provides PORT at runtime
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-  CMD curl -fsS http://localhost:${PORT}/health || exit 1
+  CMD curl -fsS http://localhost:8000/health || exit 1
 
-# Gunicorn entrypoint - use PORT env variable
-CMD sh -c "gunicorn -w 4 -b 0.0.0.0:${PORT} --timeout 120 --keep-alive 2 --max-requests 1000 --max-requests-jitter 100 app:app"
+# Use Railway's startCommand from railway.json, or fallback to this
+# Railway will use the startCommand from railway.json, so this is just a fallback
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8000", "--timeout", "120", "--keep-alive", "2", "--max-requests", "1000", "--max-requests-jitter", "100", "app:app"]
