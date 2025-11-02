@@ -98,7 +98,7 @@ def upload_file():
             logger.info(f"File saved successfully to {filepath}")
         except Exception as e:
             logger.error(f"Error saving file: {e}", exc_info=True)
-            flash(f'Error saving file: {str(e)}')
+            flash(f'Error saving file: {str(e)}', 'error')
             return redirect(url_for('index'))
         
         # Process the package
@@ -115,15 +115,27 @@ def upload_file():
                     result['timestamp'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 
                 logger.info(f"Package processed successfully, rendering results page")
-                return render_template('results.html', result=result)
+                logger.info(f"Result keys: {result.keys()}")
+                logger.info(f"Dimensions: {result.get('dimensions')}")
+                
+                try:
+                    return render_template('results.html', result=result)
+                except Exception as template_error:
+                    logger.error(f"Error rendering template: {template_error}", exc_info=True)
+                    flash(f'Error displaying results: {str(template_error)}', 'error')
+                    return redirect(url_for('index'))
             else:
                 error_msg = result.get('error', 'Unknown error')
                 logger.error(f"Package processing failed: {error_msg}")
-                flash(f'Error processing package: {error_msg}')
+                logger.error(f"Full result: {result}")
+                flash(f'Error processing package: {error_msg}', 'error')
                 return redirect(url_for('index'))
         except Exception as e:
             logger.error(f"Exception processing package: {e}", exc_info=True)
-            flash(f'Error processing package: {str(e)}')
+            import traceback
+            error_details = traceback.format_exc()
+            logger.error(f"Full traceback: {error_details}")
+            flash(f'Error processing package: {str(e)}', 'error')
             return redirect(url_for('index'))
     
     logger.warning(f"Invalid file type: {file.filename if file else 'None'}")
