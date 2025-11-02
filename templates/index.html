@@ -158,6 +158,108 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+                align-items: flex-start;
+                padding-top: 20px;
+            }
+            
+            .container {
+                padding: 20px 15px;
+                width: 100%;
+                max-width: 100%;
+                border-radius: 15px;
+                margin: 0;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+                margin-bottom: 8px;
+            }
+            
+            .subtitle {
+                font-size: 0.95em;
+                margin-bottom: 20px;
+                line-height: 1.4;
+            }
+            
+            .upload-area {
+                padding: 30px 15px;
+                margin: 20px 0;
+            }
+            
+            .upload-icon {
+                font-size: 2.5em;
+                margin-bottom: 10px;
+            }
+            
+            .upload-text {
+                font-size: 1em;
+                margin-bottom: 10px;
+                word-wrap: break-word;
+            }
+            
+            .btn {
+                padding: 12px 24px;
+                font-size: 1em;
+                width: 100%;
+                margin: 8px 0;
+                display: block;
+            }
+            
+            .features {
+                margin-top: 20px;
+                font-size: 0.9em;
+            }
+            
+            .feature {
+                margin: 10px 0;
+            }
+            
+            .feature-icon {
+                font-size: 1em;
+                margin-right: 10px;
+            }
+            
+            .flash-message {
+                padding: 12px;
+                font-size: 0.9em;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px 10px;
+            }
+            
+            h1 {
+                font-size: 1.5em;
+            }
+            
+            .subtitle {
+                font-size: 0.85em;
+            }
+            
+            .upload-area {
+                padding: 25px 10px;
+            }
+            
+            .upload-icon {
+                font-size: 2em;
+            }
+            
+            .upload-text {
+                font-size: 0.9em;
+            }
+            
+            .btn {
+                padding: 10px 20px;
+                font-size: 0.95em;
+            }
+        }
     </style>
 </head>
 <body>
