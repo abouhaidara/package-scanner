@@ -254,11 +254,16 @@
         function handleFileSelect() {
             const file = fileInput.files[0];
             if (file) {
-                uploadArea.innerHTML = `
-                    <div class="upload-icon">✅</div>
-                    <div class="upload-text">Selected: ${file.name}</div>
-                    <small style="color: #999; display: block; margin-top: 10px;">Click "Scan Package" below to process</small>
-                `;
+                // Don't replace innerHTML - just update text elements
+                // This preserves the file input in the DOM
+                const icon = uploadArea.querySelector('.upload-icon');
+                const text = uploadArea.querySelector('.upload-text');
+                
+                if (icon) icon.textContent = '✅';
+                if (text) {
+                    text.innerHTML = `Selected: ${file.name}<br><small style="color: #999; display: block; margin-top: 10px;">Click "Scan Package" below to process</small>`;
+                }
+                
                 submitBtn.style.display = 'inline-block';
                 chooseFileBtn.style.display = 'none';
                 uploadArea.style.cursor = 'default';
@@ -267,6 +272,13 @@
         
         // Form submission
         uploadForm.addEventListener('submit', (e) => {
+            // Verify file is still attached before submitting
+            if (!fileInput.files || fileInput.files.length === 0) {
+                e.preventDefault();
+                alert('Please select a file first');
+                return false;
+            }
+            
             // Don't prevent default - let form submit normally
             loading.style.display = 'block';
             submitBtn.style.display = 'none';
