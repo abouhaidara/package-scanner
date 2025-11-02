@@ -41,24 +41,29 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-@app.route('/')
+@app.route('/', methods=['GET'])
 def index():
     """Main page with upload form."""
     return render_template('index.html')
 
 
-@app.route('/upload', methods=['POST'])
+@app.route('/upload', methods=['POST', 'GET'])
 def upload_file():
     """Handle file upload and processing."""
+    # Handle GET requests (shouldn't happen, but handle gracefully)
+    if request.method == 'GET':
+        return redirect(url_for('index'))
+    
+    # Handle POST requests
     if 'file' not in request.files:
         flash('No file selected')
-        return redirect(request.url)
+        return redirect(url_for('index'))
     
     file = request.files['file']
     
     if file.filename == '':
         flash('No file selected')
-        return redirect(request.url)
+        return redirect(url_for('index'))
     
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)

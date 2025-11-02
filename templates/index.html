@@ -259,8 +259,10 @@
         
         // Form submission
         uploadForm.addEventListener('submit', (e) => {
+            // Don't prevent default - let form submit normally
             loading.style.display = 'block';
             submitBtn.style.display = 'none';
+            // Form will submit normally via POST to /upload
         });
         
         // Click to upload
