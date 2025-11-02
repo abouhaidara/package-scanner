@@ -45,6 +45,14 @@ python app.py
 - **Google Cloud Storage** (optional, for cloud storage)
 - **Camera or image files** (for input)
 
+## ⚠️ Deployment Note
+
+**Vercel/Netlify Functions are NOT supported** - OpenCV requires system libraries not available in serverless environments.
+
+**Recommended platforms:** Railway, Render, Google Cloud Run, or Fly.io (all support Docker/OpenCV)
+
+See `QUICK_DEPLOY.md` for deployment instructions.
+
 ## 🔧 Configuration
 
 ### Environment Variables (.env file)
