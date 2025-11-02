@@ -1,0 +1,39 @@
+services:
+  package-scanner:
+    platform: linux/amd64
+    build: .
+    ports:
+      - "8000:8000"                # App directly on localhost:8000
+    environment:
+      - FLASK_ENV=production
+      - DEBUG=False
+      - PORT=8000
+      - GOOGLE_CLOUD_PROJECT_ID=${GOOGLE_CLOUD_PROJECT_ID:-}
+      - GOOGLE_CLOUD_BUCKET_NAME=${GOOGLE_CLOUD_BUCKET_NAME:-}
+      - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS:-}
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+      # If you keep creds as a local JSON, uncomment and set the env above to /gcloud/creds.json
+      # - ./gcloud-credentials.json:/gcloud/creds.json:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  nginx:
+    platform: linux/amd64
+    image: nginx:alpine
+    depends_on:
+      package-scanner:
+        condition: service_healthy
+    ports:
+      - "8080:80"                  # Nginx on localhost:8080
+      - "8443:443"                 # TLS here if you mount certs
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl       # Put certs here if using 8443
+    restart: unless-stopped

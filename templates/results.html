@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Package Scan Results</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            font-weight: 300;
+            text-align: center;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+            text-align: center;
+        }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 30px 0;
+        }
+        
+        .dimensions-card {
+            background: #f8f9ff;
+            border-radius: 15px;
+            padding: 25px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .dimensions-card h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+        }
+        
+        .dimension-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .dimension-label {
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .dimension-value {
+            color: #333;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        
+        .volume-highlight {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .volume-highlight h2 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .volume-highlight p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .image-preview {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .image-preview img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        
+        .actions {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            margin: 10px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .cloud-info {
+            background: #e8f5e8;
+            border: 1px solid #c3e6c3;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .cloud-info h4 {
+            color: #155724;
+            margin-bottom: 10px;
+        }
+        
+        .cloud-info a {
+            color: #155724;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .cloud-info a:hover {
+            text-decoration: underline;
+        }
+        
+        .timestamp {
+            color: #666;
+            font-size: 0.9em;
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📦 Scan Results</h1>
+        <p class="subtitle">Package analysis completed successfully</p>
+        
+        {% if result.success %}
+            <div class="volume-highlight">
+                <h2>{{ "%.2f"|format(result.dimensions.volume_liters) }} L</h2>
+                <p>Total Volume</p>
+            </div>
+            
+            <div class="results-grid">
+                <div class="dimensions-card">
+                    <h3>📏 Dimensions</h3>
+                    <div class="dimension-item">
+                        <span class="dimension-label">Width:</span>
+                        <span class="dimension-value">{{ result.dimensions.width_cm }} cm</span>
+                    </div>
+                    <div class="dimension-item">
+                        <span class="dimension-label">Height:</span>
+                        <span class="dimension-value">{{ result.dimensions.height_cm }} cm</span>
+                    </div>
+                    <div class="dimension-item">
+                        <span class="dimension-label">Depth:</span>
+                        <span class="dimension-value">{{ result.dimensions.depth_cm }} cm</span>
+                    </div>
+                    <div class="dimension-item">
+                        <span class="dimension-label">Volume (cm³):</span>
+                        <span class="dimension-value">{{ result.dimensions.volume_cm3 }} cm³</span>
+                    </div>
+                </div>
+                
+                <div class="dimensions-card">
+                    <h3>📊 Summary</h3>
+                    <div class="dimension-item">
+                        <span class="dimension-label">Processing Time:</span>
+                        <span class="dimension-value">{{ result.timestamp }}</span>
+                    </div>
+                    <div class="dimension-item">
+                        <span class="dimension-label">File:</span>
+                        <span class="dimension-value">{{ result.cloud_filename.split('/')[-1] }}</span>
+                    </div>
+                    <div class="dimension-item">
+                        <span class="dimension-label">Status:</span>
+                        <span class="dimension-value" style="color: #28a745;">✅ Success</span>
+                    </div>
+                </div>
+            </div>
+            
+            {% if result.image_url %}
+                <div class="cloud-info">
+                    <h4>☁️ Image Stored in Cloud</h4>
+                    <p>Your package image has been uploaded to cloud storage:</p>
+                    <a href="{{ result.image_url }}" target="_blank">View Image</a>
+                </div>
+            {% endif %}
+            
+            <div class="image-preview">
+                <img src="{{ result.image_url or '/static/placeholder.png' }}" alt="Package Image" onerror="this.style.display='none'">
+            </div>
+            
+        {% else %}
+            <div class="volume-highlight" style="background: #f8d7da; color: #721c24;">
+                <h2>❌ Error</h2>
+                <p>{{ result.error }}</p>
+            </div>
+        {% endif %}
+        
+        <div class="actions">
+            <a href="/" class="btn">Scan Another Package</a>
+            <button onclick="window.print()" class="btn btn-secondary">Print Results</button>
+        </div>
+        
+        <div class="timestamp">
+            Processed on {{ result.timestamp }}
+        </div>
+    </div>
+    
+    <script>
+        // Auto-refresh timestamp
+        function updateTimestamp() {
+            const timestampElement = document.querySelector('.timestamp');
+            if (timestampElement) {
+                const now = new Date();
+                timestampElement.textContent = `Processed on ${now.toLocaleString()}`;
+            }
+        }
+        
+        // Update timestamp every minute
+        setInterval(updateTimestamp, 60000);
+    </script>
+</body>
+</html>
