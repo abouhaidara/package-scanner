@@ -225,7 +225,7 @@
                     </div>
                     <div class="dimension-item">
                         <span class="dimension-label">File:</span>
-                        <span class="dimension-value">{{ result.cloud_filename.split('/')[-1] }}</span>
+                        <span class="dimension-value">{{ result.local_path.split('/')[-1] if result.local_path else result.cloud_filename.split('/')[-1] if result.cloud_filename else 'Unknown' }}</span>
                     </div>
                     <div class="dimension-item">
                         <span class="dimension-label">Status:</span>
@@ -259,7 +259,7 @@
         </div>
         
         <div class="timestamp">
-            Processed on {{ result.timestamp }}
+            Processed on {{ result.timestamp if result.timestamp else 'Just now' }}
         </div>
     </div>
     

@@ -9,9 +9,14 @@ from flask import Flask, request, render_template, jsonify, redirect, url_for, f
 from werkzeug.utils import secure_filename
 import os
 import json
+import logging
 from datetime import datetime
 from package_scanner import PackageVolumeScanner
 from dotenv import load_dotenv
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
@@ -77,13 +82,26 @@ def upload_file():
         file.save(filepath)
         
         # Process the package
-        result = scanner.process_package(filepath)
-        
-        if result['success']:
-            flash('Package processed successfully!')
-            return render_template('results.html', result=result)
-        else:
-            flash(f'Error processing package: {result.get("error", "Unknown error")}')
+        try:
+            result = scanner.process_package(filepath)
+            
+            if result.get('success'):
+                # Convert timestamp to readable format if it's a Unix timestamp
+                if isinstance(result.get('timestamp'), int):
+                    result['timestamp'] = datetime.fromtimestamp(result['timestamp']).strftime('%Y-%m-%d %H:%M:%S')
+                elif not isinstance(result.get('timestamp'), str):
+                    result['timestamp'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                
+                logger.info(f"Package processed successfully: {result}")
+                return render_template('results.html', result=result)
+            else:
+                error_msg = result.get('error', 'Unknown error')
+                logger.error(f"Package processing failed: {error_msg}")
+                flash(f'Error processing package: {error_msg}')
+                return redirect(url_for('index'))
+        except Exception as e:
+            logger.error(f"Exception processing package: {e}", exc_info=True)
+            flash(f'Error processing package: {str(e)}')
             return redirect(url_for('index'))
     
     flash('Invalid file type. Please upload an image file.')
