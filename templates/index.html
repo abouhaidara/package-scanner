@@ -180,10 +180,11 @@
                 <div class="upload-icon">📷</div>
                 <div class="upload-text">Click to select an image or drag and drop</div>
                 <input type="file" name="file" id="fileInput" class="file-input" accept="image/*" required>
-                <button type="button" class="btn" onclick="document.getElementById('fileInput').click()">
-                    Choose File
-                </button>
             </div>
+            
+            <button type="button" class="btn" id="chooseFileBtn" onclick="document.getElementById('fileInput').click()">
+                Choose File
+            </button>
             
             <div class="loading" id="loading">
                 <div class="spinner"></div>
@@ -221,6 +222,7 @@
         const submitBtn = document.getElementById('submitBtn');
         const loading = document.getElementById('loading');
         const uploadForm = document.getElementById('uploadForm');
+        const chooseFileBtn = document.getElementById('chooseFileBtn');
         
         // Drag and drop functionality
         uploadArea.addEventListener('dragover', (e) => {
@@ -238,7 +240,10 @@
             
             const files = e.dataTransfer.files;
             if (files.length > 0) {
-                fileInput.files = files;
+                // Create a new FileList-like object and assign it
+                const dt = new DataTransfer();
+                dt.items.add(files[0]);
+                fileInput.files = dt.files;
                 handleFileSelect();
             }
         });
@@ -252,8 +257,11 @@
                 uploadArea.innerHTML = `
                     <div class="upload-icon">✅</div>
                     <div class="upload-text">Selected: ${file.name}</div>
+                    <small style="color: #999; display: block; margin-top: 10px;">Click "Scan Package" below to process</small>
                 `;
                 submitBtn.style.display = 'inline-block';
+                chooseFileBtn.style.display = 'none';
+                uploadArea.style.cursor = 'default';
             }
         }
         
@@ -262,12 +270,16 @@
             // Don't prevent default - let form submit normally
             loading.style.display = 'block';
             submitBtn.style.display = 'none';
+            uploadArea.style.display = 'none';
             // Form will submit normally via POST to /upload
         });
         
-        // Click to upload
-        uploadArea.addEventListener('click', () => {
-            fileInput.click();
+        // Click to upload - only if no file is selected
+        uploadArea.addEventListener('click', (e) => {
+            // Only trigger file picker if no file is selected or if clicking the button area
+            if (!fileInput.files || fileInput.files.length === 0) {
+                fileInput.click();
+            }
         });
     </script>
 </body>
