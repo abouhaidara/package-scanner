@@ -44,7 +44,6 @@ EXPOSE 8000
 # Remove HEALTHCHECK - Railway handles health checks via HTTP probes
 # HEALTHCHECK removed to avoid port conflicts with Railway's dynamic PORT
 
-# Railway uses startCommand from railway.json
-# Fallback CMD (shouldn't be needed if railway.json is used)
-# Note: $PORT is provided by Railway at runtime
-CMD ["sh", "-c", "exec gunicorn -w 2 -b 0.0.0.0:${PORT:-8000} --timeout 120 --keep-alive 2 app:app"]
+# Railway provides PORT env variable at runtime
+# Use shell form to allow variable expansion
+CMD exec gunicorn -w 2 -b 0.0.0.0:${PORT:-8000} --timeout 120 --keep-alive 2 app:app
