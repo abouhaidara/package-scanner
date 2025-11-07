@@ -341,15 +341,15 @@
                 <div class="dimensions-card">
                     <h3>📏 Dimensions</h3>
                     <div class="dimension-item">
+                        <span class="dimension-label">Length:</span>
+                        <span class="dimension-value">{{ "%.2f"|format(result.dimensions.height_in) }}"</span>
+                    </div>
+                    <div class="dimension-item">
                         <span class="dimension-label">Width:</span>
                         <span class="dimension-value">{{ "%.2f"|format(result.dimensions.width_in) }}"</span>
                     </div>
                     <div class="dimension-item">
                         <span class="dimension-label">Height:</span>
-                        <span class="dimension-value">{{ "%.2f"|format(result.dimensions.height_in) }}"</span>
-                    </div>
-                    <div class="dimension-item">
-                        <span class="dimension-label">Depth:</span>
                         <span class="dimension-value">{{ "%.2f"|format(result.dimensions.depth_in) }}"</span>
                     </div>
                     <div class="dimension-item">
