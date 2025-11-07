@@ -105,10 +105,24 @@ def upload_file():
             flash(f'Error saving file: {str(e)}', 'error')
             return redirect(url_for('index'))
         
+        # Get optional known dimension for calibration (if provided)
+        known_dimension = request.form.get('known_dimension')
+        dimension_type = request.form.get('dimension_type', 'width')
+        
         # Process the package
         try:
             logger.info("Starting package processing...")
-            result = scanner.process_package(filepath)
+            if known_dimension:
+                try:
+                    known_dimension_cm = float(known_dimension) * 2.54  # Convert inches to cm
+                    logger.info(f"Using known dimension for calibration: {known_dimension}\" ({known_dimension_cm}cm) as {dimension_type}")
+                    # Pass to scanner for calibration
+                    result = scanner.process_package(filepath, known_dimension_cm=known_dimension_cm, dimension_type=dimension_type)
+                except ValueError:
+                    logger.warning(f"Invalid known dimension value: {known_dimension}, using automatic detection")
+                    result = scanner.process_package(filepath)
+            else:
+                result = scanner.process_package(filepath)
             logger.info(f"Processing result: success={result.get('success')}")
             
             if result.get('success'):

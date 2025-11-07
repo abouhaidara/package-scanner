@@ -61,7 +61,7 @@ class PackageVolumeScanner:
         # Create upload folder if it doesn't exist
         os.makedirs(self.upload_folder, exist_ok=True)
     
-    def detect_package_dimensions(self, image_path: str) -> Dict[str, float]:
+    def detect_package_dimensions(self, image_path: str, known_dimension_cm: Optional[float] = None, dimension_type: str = 'width') -> Dict[str, float]:
         """
         Detect package dimensions from an image.
         
@@ -93,7 +93,12 @@ class PackageVolumeScanner:
             if not contours:
                 raise ValueError("No contours found in image")
             
-            largest_contour = max(contours, key=cv2.contourArea)
+            # Sort contours by area (largest first)
+            sorted_contours = sorted(contours, key=cv2.contourArea, reverse=True)
+            largest_contour = sorted_contours[0]
+            
+            # Try to detect credit card for automatic calibration (check all contours)
+            scale_factor = self._calculate_scale_factor(image, contours)
             
             # Approximate the contour to a polygon
             epsilon = 0.02 * cv2.arcLength(largest_contour, True)
@@ -110,9 +115,17 @@ class PackageVolumeScanner:
             # This is a simplified approach - in practice, you'd need stereo vision or multiple angles
             depth_pixels = min(width_pixels, height_pixels) * self.depth_factor
             
-            # Convert pixels to real-world dimensions
-            # This requires calibration with a known reference object
-            scale_factor = self._calculate_scale_factor(image)
+            # Convert pixels to real-world dimensions using calculated scale factor
+            # If user provided a known dimension, use it to calibrate the scale factor
+            if known_dimension_cm:
+                if dimension_type == 'width':
+                    # User knows the width - use it to calculate accurate scale
+                    scale_factor = known_dimension_cm / width_pixels
+                    logger.info(f"Calibrated using known width: {known_dimension_cm}cm = {width_pixels}px, scale: {scale_factor:.6f} cm/pixel")
+                elif dimension_type == 'height':
+                    # User knows the height - use it to calculate accurate scale
+                    scale_factor = known_dimension_cm / height_pixels
+                    logger.info(f"Calibrated using known height: {known_dimension_cm}cm = {height_pixels}px, scale: {scale_factor:.6f} cm/pixel")
             
             width_cm = width_pixels * scale_factor
             height_cm = height_pixels * scale_factor
@@ -145,33 +158,105 @@ class PackageVolumeScanner:
             logger.error(f"Error detecting package dimensions: {e}")
             raise
     
-    def _calculate_scale_factor(self, image: np.ndarray) -> float:
+    def _detect_credit_card(self, image: np.ndarray, contours) -> Optional[float]:
         """
-        Calculate scale factor to convert pixels to real-world measurements.
-        
-        This is a simplified implementation. In practice, you would:
-        1. Detect a reference object of known size
-        2. Use stereo vision or multiple camera angles
-        3. Use depth sensors or structured light
+        Try to detect a credit card in the image for automatic calibration.
+        Credit card standard size: 8.56cm × 5.398cm (ISO/IEC 7810 ID-1)
         
         Args:
             image: Input image
+            contours: List of detected contours
+            
+        Returns:
+            Scale factor if credit card detected, None otherwise
+        """
+        if not contours:
+            return None
+        
+        # Credit card aspect ratio: 8.56 / 5.398 ≈ 1.586
+        credit_card_aspect_ratio = 8.56 / 5.398  # ≈ 1.586
+        tolerance = 0.15  # 15% tolerance for aspect ratio matching
+        
+        # Credit card typical size range in pixels (for filtering)
+        min_card_size = 100  # pixels
+        max_card_size = max(image.shape[:2]) * 0.5  # Max 50% of image
+        
+        for contour in contours:
+            # Get bounding rectangle
+            x, y, w, h = cv2.boundingRect(contour)
+            area = cv2.contourArea(contour)
+            
+            # Filter by size
+            if area < min_card_size * min_card_size or area > max_card_size * max_card_size:
+                continue
+            
+            # Check aspect ratio (credit cards are roughly rectangular)
+            aspect_ratio = max(w, h) / min(w, h) if min(w, h) > 0 else 0
+            
+            # Check if aspect ratio matches credit card (accounting for rotation)
+            if abs(aspect_ratio - credit_card_aspect_ratio) < tolerance or \
+               abs(aspect_ratio - (1/credit_card_aspect_ratio)) < tolerance:
+                
+                # Found potential credit card - use it for calibration
+                # Use the larger dimension (width or height) for scale calculation
+                card_dimension_pixels = max(w, h)
+                card_dimension_cm = 8.56  # Credit card width in cm
+                
+                scale_factor = card_dimension_cm / card_dimension_pixels
+                logger.info(f"Credit card detected! Scale factor: {scale_factor:.6f} cm/pixel")
+                return scale_factor
+        
+        return None
+    
+    def _calculate_scale_factor(self, image: np.ndarray, contours=None) -> float:
+        """
+        Calculate scale factor to convert pixels to real-world measurements.
+        
+        Tries multiple methods in order of accuracy:
+        1. Automatic credit card detection (if present)
+        2. Improved heuristic based on package size
+        3. Configurable field of view
+        
+        Args:
+            image: Input image
+            contours: Optional list of contours for reference object detection
             
         Returns:
             Scale factor (cm per pixel)
         """
-        # For demonstration, we'll use a heuristic based on image size
-        # In a real implementation, you'd detect a reference object
-        
         height, width = image.shape[:2]
         
-        # Use configurable field of view for scale calculation
-        # This can be calibrated by the user based on their camera setup
-        # Formula: scale_factor = (real_world_size_cm) / (pixel_size)
-        # We estimate: if image width/height represents FIELD_OF_VIEW_CM, then:
-        scale_factor = self.field_of_view_cm / max(width, height)
+        # Method 1: Try to detect credit card for automatic calibration
+        if contours is not None:
+            card_scale = self._detect_credit_card(image, contours)
+            if card_scale is not None:
+                return card_scale
         
-        logger.info(f"Scale factor: {scale_factor:.6f} cm/pixel (FOV: {self.field_of_view_cm}cm, Image size: {max(width, height)}px)")
+        # Method 2: Improved heuristic based on detected package size
+        # If we have package dimensions, estimate scale based on typical package sizes
+        # Most shipping boxes are between 10-50cm in their largest dimension
+        # We'll use a smarter estimate based on image resolution
+        
+        # Estimate based on image resolution and typical camera setups
+        # Smartphone cameras at 1-2m distance typically see 60-120cm field of view
+        # Higher resolution = closer camera = smaller field of view
+        
+        image_megapixels = (width * height) / 1_000_000
+        
+        # Adjust field of view estimate based on image resolution
+        if image_megapixels > 8:  # High-res camera (close up)
+            estimated_fov = 60.0  # Smaller field of view
+        elif image_megapixels > 2:  # Medium-res (normal distance)
+            estimated_fov = 80.0
+        else:  # Lower-res (farther away)
+            estimated_fov = 120.0
+        
+        # Use configurable field of view if set, otherwise use smart estimate
+        fov = self.field_of_view_cm if self.field_of_view_cm != 100.0 else estimated_fov
+        
+        scale_factor = fov / max(width, height)
+        
+        logger.info(f"Scale factor: {scale_factor:.6f} cm/pixel (Estimated FOV: {fov}cm, Image: {width}x{height}px, {image_megapixels:.1f}MP)")
         
         return scale_factor
     
@@ -210,7 +295,7 @@ class PackageVolumeScanner:
             logger.error(f"Error uploading to cloud storage: {e}")
             return None
     
-    def process_package(self, image_path: str) -> Dict:
+    def process_package(self, image_path: str, known_dimension_cm: Optional[float] = None, dimension_type: str = 'width') -> Dict:
         """
         Complete package processing pipeline.
         
@@ -227,8 +312,8 @@ class PackageVolumeScanner:
             timestamp = int(time.time())
             cloud_filename = f"packages/{timestamp}_{name}{ext}"
             
-            # Detect dimensions
-            dimensions = self.detect_package_dimensions(image_path)
+            # Detect dimensions (with optional known dimension for calibration)
+            dimensions = self.detect_package_dimensions(image_path, known_dimension_cm=known_dimension_cm, dimension_type=dimension_type)
             
             # Upload to cloud storage
             cloud_url = self.upload_to_cloud(image_path, cloud_filename)
