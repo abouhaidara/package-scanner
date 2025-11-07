@@ -38,6 +38,17 @@ class PackageVolumeScanner:
         self.ref_width = float(os.getenv('REFERENCE_OBJECT_WIDTH', '10.0'))
         self.ref_height = float(os.getenv('REFERENCE_OBJECT_HEIGHT', '10.0'))
         
+        # Calibration settings - adjust these for better accuracy
+        # FIELD_OF_VIEW_CM: Estimated field of view in centimeters
+        # Adjust based on your camera distance and setup
+        # Example: If camera is 1 meter away and sees ~80cm wide, set to 80
+        self.field_of_view_cm = float(os.getenv('FIELD_OF_VIEW_CM', '100.0'))
+        
+        # DEPTH_ESTIMATION_FACTOR: Multiplier for depth estimation
+        # 0.8 = assumes depth is 80% of smallest visible dimension
+        # Adjust based on typical package shapes (0.6-1.0 range)
+        self.depth_factor = float(os.getenv('DEPTH_ESTIMATION_FACTOR', '0.8'))
+        
         # Initialize Google Cloud Storage client
         self.storage_client = None
         if self.project_id and self.bucket_name:
@@ -97,7 +108,7 @@ class PackageVolumeScanner:
             
             # Estimate depth (assuming roughly cubic package)
             # This is a simplified approach - in practice, you'd need stereo vision or multiple angles
-            depth_pixels = min(width_pixels, height_pixels) * 0.8
+            depth_pixels = min(width_pixels, height_pixels) * self.depth_factor
             
             # Convert pixels to real-world dimensions
             # This requires calibration with a known reference object
@@ -154,11 +165,13 @@ class PackageVolumeScanner:
         
         height, width = image.shape[:2]
         
-        # Assume the image represents roughly 1 meter field of view
-        # This is a rough estimate - real calibration would be much more precise
-        estimated_field_of_view_cm = 100.0
+        # Use configurable field of view for scale calculation
+        # This can be calibrated by the user based on their camera setup
+        # Formula: scale_factor = (real_world_size_cm) / (pixel_size)
+        # We estimate: if image width/height represents FIELD_OF_VIEW_CM, then:
+        scale_factor = self.field_of_view_cm / max(width, height)
         
-        scale_factor = estimated_field_of_view_cm / max(width, height)
+        logger.info(f"Scale factor: {scale_factor:.6f} cm/pixel (FOV: {self.field_of_view_cm}cm, Image size: {max(width, height)}px)")
         
         return scale_factor
     

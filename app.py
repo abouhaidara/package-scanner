@@ -33,6 +33,10 @@ UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER', 'uploads')
 MAX_CONTENT_LENGTH = int(os.getenv('MAX_CONTENT_LENGTH', '16777216'))  # 16MB
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff'}
 
+# Calibration settings (for accuracy improvement)
+FIELD_OF_VIEW_CM = os.getenv('FIELD_OF_VIEW_CM', '100.0')  # Adjust for better accuracy
+DEPTH_ESTIMATION_FACTOR = os.getenv('DEPTH_ESTIMATION_FACTOR', '0.8')  # Depth estimation multiplier
+
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 
