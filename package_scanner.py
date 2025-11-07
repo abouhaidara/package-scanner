@@ -60,12 +60,8 @@ class PackageVolumeScanner:
         
         # Create upload folder if it doesn't exist
         os.makedirs(self.upload_folder, exist_ok=True)
-        
-        # Training data file for learning from known packages
-        self.training_data_file = os.getenv('TRAINING_DATA_FILE', 'training_data.json')
-        self.training_data = self._load_training_data()
     
-    def detect_package_dimensions(self, image_path: str, known_dimension_cm: Optional[float] = None, dimension_type: str = 'width', use_training: bool = True) -> Dict[str, float]:
+    def detect_package_dimensions(self, image_path: str, known_dimension_cm: Optional[float] = None, dimension_type: str = 'width') -> Dict[str, float]:
         """
         Detect package dimensions from an image.
         
@@ -133,7 +129,7 @@ class PackageVolumeScanner:
                     logger.info(f"Calibrated using known height: {known_dimension_cm}cm = {height_pixels}px, scale: {scale_factor:.6f} cm/pixel")
             else:
                 # Calculate scale factor using best available method
-                scale_factor = self._calculate_scale_factor(image, contours, width_pixels, height_pixels, use_training)
+                scale_factor = self._calculate_scale_factor(image, contours)
             
             width_cm = width_pixels * scale_factor
             height_cm = height_pixels * scale_factor
@@ -447,7 +443,7 @@ class PackageVolumeScanner:
             logger.error(f"Error uploading to cloud storage: {e}")
             return None
     
-    def process_package(self, image_path: str, known_dimension_cm: Optional[float] = None, dimension_type: str = 'width') -> Dict:
+    def process_package(self, image_path: str) -> Dict:
         """
         Complete package processing pipeline.
         
@@ -464,8 +460,8 @@ class PackageVolumeScanner:
             timestamp = int(time.time())
             cloud_filename = f"packages/{timestamp}_{name}{ext}"
             
-            # Detect dimensions (with optional known dimension for calibration)
-            dimensions = self.detect_package_dimensions(image_path, known_dimension_cm=known_dimension_cm, dimension_type=dimension_type)
+            # Detect dimensions
+            dimensions = self.detect_package_dimensions(image_path)
             
             # Upload to cloud storage
             cloud_url = self.upload_to_cloud(image_path, cloud_filename)
