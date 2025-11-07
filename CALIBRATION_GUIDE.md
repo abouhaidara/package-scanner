@@ -1,75 +1,76 @@
-# 📏 Calibration Guide for Accurate Measurements
+# 📏 Accuracy Improvement Guide
 
-## Why Calibration is Important
+## Automatic Calibration (No Setup Required!)
 
-The accuracy of measurements depends on knowing the **scale factor** - how many centimeters each pixel represents. Currently, the system estimates this, but you can calibrate it for much better accuracy.
+The app now automatically improves accuracy in three ways:
 
-## Quick Calibration Method
+### 1. **Automatic Credit Card Detection** ⭐ (Easiest)
 
-### Step 1: Take a Test Photo
+**How it works:**
+- Simply place a credit card next to your package in the photo
+- The app automatically detects it and uses it for calibration
+- **No user input needed!**
 
-1. Place a **known-size object** next to your package (e.g., a credit card, ruler, or standard sheet of paper)
-2. Take a photo that includes both the package and the reference object
-3. Measure the reference object in the photo (in pixels) using image editing software
+**Why it works:**
+- Credit cards have a standard size (8.56cm × 5.398cm)
+- The app recognizes the credit card shape and uses it to calculate accurate measurements
 
-### Step 2: Calculate Your Field of View
+**Best for:** Most accurate results with zero effort
 
-**Formula:**
-```
-Field of View (cm) = (Reference Object Real Size in cm) × (Image Width in pixels) / (Reference Object Width in pixels)
-```
+---
+
+### 2. **Optional: Enter One Known Dimension** (Simple)
+
+**How it works:**
+- After selecting an image, an optional field appears
+- Enter one dimension you know (width or height) in inches
+- The app uses this to calibrate all other measurements
 
 **Example:**
-- Credit card real size: 8.56 cm wide
-- Credit card in photo: 200 pixels wide
-- Image width: 2000 pixels
-- Field of View = 8.56 × (2000 / 200) = **85.6 cm**
+- You know the package width is 12 inches
+- Enter "12" and select "Width"
+- The app calculates accurate height and depth automatically
 
-### Step 3: Set Environment Variable
+**Best for:** When you know one dimension but want accurate results
 
-In Railway dashboard → Your service → Variables, add:
+---
+
+### 3. **Smart Automatic Estimation** (Default)
+
+**How it works:**
+- The app automatically estimates scale based on image resolution
+- Higher resolution photos = better accuracy
+- No user input needed
+
+**Best for:** Quick scans when you don't have a reference object
+
+---
+
+## Tips for Best Accuracy
+
+1. **Use a Credit Card** - Place it next to the package for automatic calibration
+2. **Good Lighting** - Ensure clear package edges are visible
+3. **Straight-On Photo** - Take photo perpendicular to the package (not at an angle)
+4. **Clear Background** - Place package on contrasting background for better edge detection
+
+---
+
+## Advanced: Manual Calibration (Optional)
+
+If you want to fine-tune for a specific camera setup, you can set environment variables:
+
+### Field of View Calibration
 
 ```bash
-FIELD_OF_VIEW_CM=85.6
+FIELD_OF_VIEW_CM=80.0
 ```
 
-Or in your `.env` file:
-```bash
-FIELD_OF_VIEW_CM=85.6
-```
+**How to find your value:**
+1. Take a photo with a credit card
+2. If measurements are too small, increase the value
+3. If measurements are too large, decrease the value
 
-## Advanced Calibration
-
-### Method 1: Use a Ruler
-
-1. Place a ruler next to the package
-2. Take photo
-3. Count pixels for 10cm on the ruler
-4. Calculate: `FIELD_OF_VIEW_CM = 10 × (image_width / ruler_10cm_in_pixels)`
-
-### Method 2: Known Package Size
-
-1. Measure a package manually
-2. Upload photo of that package
-3. Check what the app measures
-4. Adjust `FIELD_OF_VIEW_CM` until measurements match
-
-**Formula:**
-```
-New FIELD_OF_VIEW_CM = Current FIELD_OF_VIEW_CM × (Actual Size / Measured Size)
-```
-
-### Method 3: Camera Distance Method
-
-If you know your camera distance and angle:
-
-```
-Field of View ≈ 2 × distance × tan(field_of_view_angle / 2)
-```
-
-## Depth Estimation Adjustment
-
-The depth (third dimension) is estimated as a percentage of the smallest visible dimension. You can adjust this:
+### Depth Estimation Factor
 
 ```bash
 DEPTH_ESTIMATION_FACTOR=0.8
@@ -80,31 +81,18 @@ DEPTH_ESTIMATION_FACTOR=0.8
 - `0.8` - For typical boxes (default)
 - `1.0` - For cube-shaped packages
 
-## Testing Your Calibration
-
-1. Measure a package manually
-2. Upload photo with your calibration settings
-3. Compare results
-4. Adjust `FIELD_OF_VIEW_CM` if needed
-
-## Recommended Setup for Best Accuracy
-
-1. **Fixed Camera Position**: Use same distance/angle for all photos
-2. **Good Lighting**: Ensure clear package edges
-3. **Reference Object**: Include a credit card or ruler in photos
-4. **Calibrate Once**: Set `FIELD_OF_VIEW_CM` based on your setup
-5. **Test and Adjust**: Fine-tune based on real measurements
+---
 
 ## Current Limitations
 
-- **Single Viewpoint**: Can't measure true depth from one photo
-- **Perspective**: Assumes camera is perpendicular to package
+- **Single Viewpoint**: Can't measure true depth from one photo (estimated)
+- **Perspective**: Works best when camera is perpendicular to package
 - **Shape Assumptions**: Works best for rectangular packages
+
+---
 
 ## Future Improvements
 
-- Automatic reference object detection (credit card, ruler)
 - Multiple photo angles for true depth measurement
-- Camera calibration system
 - Machine learning for better shape recognition
-
+- Support for irregular package shapes
