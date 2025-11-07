@@ -153,7 +153,7 @@ class PackageVolumeScanner:
                     logger.info(f"Calibrated using known height: {known_dimension_cm}cm = {height_pixels}px, scale: {scale_factor:.6f} cm/pixel")
             else:
                 # Calculate scale factor using best available method
-                scale_factor = self._calculate_scale_factor(image, contours)
+                scale_factor = self._calculate_scale_factor(image, all_contours)
             
             width_cm = width_pixels * scale_factor
             height_cm = height_pixels * scale_factor
