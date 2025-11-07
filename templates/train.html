@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Training Data - Package Scanner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 0.95em;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        input[type="file"],
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+        
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .info-box {
+            background: #f8f9ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #667eea;
+            text-decoration: none;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📚 Add Training Data</h1>
+        <p class="subtitle">Help the app learn by providing images with known dimensions</p>
+        
+        <div class="info-box">
+            <strong>💡 How it works:</strong><br>
+            Upload an image of a package where you know the exact dimensions. 
+            The app will learn from this to improve accuracy for future scans.
+        </div>
+        
+        <form action="/train" method="post" enctype="multipart/form-data" id="trainForm">
+            <div class="form-group">
+                <label for="file">Package Image:</label>
+                <input type="file" name="file" id="file" accept="image/*" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="width">Width (inches):</label>
+                <input type="number" name="width" id="width" step="0.1" min="0.1" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="height">Height (inches):</label>
+                <input type="number" name="height" id="height" step="0.1" min="0.1" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="depth">Depth (inches):</label>
+                <input type="number" name="depth" id="depth" step="0.1" min="0.1" required>
+            </div>
+            
+            <button type="submit" class="btn" id="submitBtn">Add Training Example</button>
+        </form>
+        
+        <a href="/" class="back-link">← Back to Scanner</a>
+    </div>
+    
+    <script>
+        const form = document.getElementById('trainForm');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        form.addEventListener('submit', (e) => {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Processing...';
+        });
+    </script>
+</body>
+</html>
+

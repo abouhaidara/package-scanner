@@ -59,6 +59,70 @@ def index():
     return render_template('index.html')
 
 
+@app.route('/train', methods=['GET', 'POST'])
+def train():
+    """Add training data with known dimensions."""
+    if request.method == 'GET':
+        return render_template('train.html')
+    
+    # Handle POST request
+    if 'file' not in request.files:
+        flash('No file selected', 'error')
+        return redirect(url_for('train'))
+    
+    file = request.files['file']
+    width_in = request.form.get('width')
+    height_in = request.form.get('height')
+    depth_in = request.form.get('depth')
+    
+    if not file or file.filename == '':
+        flash('No file selected', 'error')
+        return redirect(url_for('train'))
+    
+    if not width_in or not height_in or not depth_in:
+        flash('Please provide all dimensions', 'error')
+        return redirect(url_for('train'))
+    
+    try:
+        width_in = float(width_in)
+        height_in = float(height_in)
+        depth_in = float(depth_in)
+    except ValueError:
+        flash('Invalid dimension values', 'error')
+        return redirect(url_for('train'))
+    
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        name, ext = os.path.splitext(filename)
+        filename = f"train_{timestamp}_{name}{ext}"
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        
+        try:
+            file.save(filepath)
+            
+            # Convert inches to cm
+            width_cm = width_in * 2.54
+            height_cm = height_in * 2.54
+            depth_cm = depth_in * 2.54
+            
+            # Add training example
+            if scanner.add_training_example(filepath, width_cm, height_cm, depth_cm):
+                flash(f'Training example added successfully! Total examples: {len(scanner.training_data)}', 'success')
+            else:
+                flash('Failed to add training example. Please check the image.', 'error')
+            
+            return redirect(url_for('train'))
+            
+        except Exception as e:
+            logger.error(f"Error processing training data: {e}", exc_info=True)
+            flash(f'Error: {str(e)}', 'error')
+            return redirect(url_for('train'))
+    
+    flash('Invalid file type', 'error')
+    return redirect(url_for('train'))
+
+
 @app.route('/upload', methods=['POST', 'GET'])
 def upload_file():
     """Handle file upload and processing."""

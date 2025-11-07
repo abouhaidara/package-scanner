@@ -60,8 +60,12 @@ class PackageVolumeScanner:
         
         # Create upload folder if it doesn't exist
         os.makedirs(self.upload_folder, exist_ok=True)
+        
+        # Training data file for learning from known packages
+        self.training_data_file = os.getenv('TRAINING_DATA_FILE', 'training_data.json')
+        self.training_data = self._load_training_data()
     
-    def detect_package_dimensions(self, image_path: str, known_dimension_cm: Optional[float] = None, dimension_type: str = 'width') -> Dict[str, float]:
+    def detect_package_dimensions(self, image_path: str, known_dimension_cm: Optional[float] = None, dimension_type: str = 'width', use_training: bool = True) -> Dict[str, float]:
         """
         Detect package dimensions from an image.
         
@@ -98,7 +102,8 @@ class PackageVolumeScanner:
             largest_contour = sorted_contours[0]
             
             # Try to detect credit card for automatic calibration (check all contours)
-            scale_factor = self._calculate_scale_factor(image, contours)
+            # We'll calculate scale factor after we have pixel dimensions
+            scale_factor = None
             
             # Approximate the contour to a polygon
             epsilon = 0.02 * cv2.arcLength(largest_contour, True)
@@ -126,6 +131,9 @@ class PackageVolumeScanner:
                     # User knows the height - use it to calculate accurate scale
                     scale_factor = known_dimension_cm / height_pixels
                     logger.info(f"Calibrated using known height: {known_dimension_cm}cm = {height_pixels}px, scale: {scale_factor:.6f} cm/pixel")
+            else:
+                # Calculate scale factor using best available method
+                scale_factor = self._calculate_scale_factor(image, contours, width_pixels, height_pixels, use_training)
             
             width_cm = width_pixels * scale_factor
             height_cm = height_pixels * scale_factor
@@ -143,6 +151,9 @@ class PackageVolumeScanner:
             volume_cubic_feet = volume_cm3 * 0.0000353147
             
             return {
+                'width_pixels': width_pixels,
+                'height_pixels': height_pixels,
+                'depth_pixels': depth_pixels,
                 'width_cm': round(width_cm, 2),
                 'height_cm': round(height_cm, 2),
                 'depth_cm': round(depth_cm, 2),
@@ -208,25 +219,166 @@ class PackageVolumeScanner:
         
         return None
     
-    def _calculate_scale_factor(self, image: np.ndarray, contours=None) -> float:
+    def _load_training_data(self) -> list:
+        """Load training data from JSON file."""
+        if os.path.exists(self.training_data_file):
+            try:
+                with open(self.training_data_file, 'r') as f:
+                    return json.load(f)
+            except Exception as e:
+                logger.warning(f"Error loading training data: {e}")
+                return []
+        return []
+    
+    def _save_training_data(self):
+        """Save training data to JSON file."""
+        try:
+            with open(self.training_data_file, 'w') as f:
+                json.dump(self.training_data, f, indent=2)
+            logger.info(f"Training data saved: {len(self.training_data)} examples")
+        except Exception as e:
+            logger.error(f"Error saving training data: {e}")
+    
+    def add_training_example(self, image_path: str, actual_width_cm: float, actual_height_cm: float, actual_depth_cm: float) -> bool:
+        """
+        Add a training example with known dimensions.
+        
+        Args:
+            image_path: Path to the package image
+            actual_width_cm: Actual width in cm
+            actual_height_cm: Actual height in cm
+            actual_depth_cm: Actual depth in cm
+            
+        Returns:
+            True if successful
+        """
+        try:
+            # Load image and extract features
+            image = cv2.imread(image_path)
+            if image is None:
+                logger.error(f"Could not load image: {image_path}")
+                return False
+            
+            height, width = image.shape[:2]
+            
+            # Detect package dimensions in pixels
+            try:
+                dimensions = self.detect_package_dimensions(image_path, use_training=False)
+            except Exception as e:
+                logger.error(f"Error detecting package dimensions: {e}")
+                return False
+            
+            # Calculate scale factors from actual dimensions
+            width_pixels = dimensions.get('width_pixels', 0)
+            height_pixels = dimensions.get('height_pixels', 0)
+            depth_pixels = dimensions.get('depth_pixels', 0)
+            
+            if width_pixels == 0 or height_pixels == 0:
+                logger.error("Could not detect package dimensions in pixels")
+                return False
+            
+            scale_factor_width = actual_width_cm / width_pixels if width_pixels > 0 else 0
+            scale_factor_height = actual_height_cm / height_pixels if height_pixels > 0 else 0
+            scale_factor_depth = actual_depth_cm / depth_pixels if depth_pixels > 0 else 0
+            
+            # Average scale factor
+            scale_factor = (scale_factor_width + scale_factor_height) / 2 if scale_factor_width > 0 and scale_factor_height > 0 else 0
+            
+            # Store training example
+            training_example = {
+                'image_path': image_path,
+                'image_width': width,
+                'image_height': height,
+                'package_width_pixels': width_pixels,
+                'package_height_pixels': height_pixels,
+                'package_depth_pixels': depth_pixels,
+                'actual_width_cm': actual_width_cm,
+                'actual_height_cm': actual_height_cm,
+                'actual_depth_cm': actual_depth_cm,
+                'scale_factor': scale_factor,
+                'image_megapixels': (width * height) / 1_000_000
+            }
+            
+            self.training_data.append(training_example)
+            self._save_training_data()
+            
+            logger.info(f"Training example added: {len(self.training_data)} total examples")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error adding training example: {e}", exc_info=True)
+            return False
+    
+    def _get_scale_factor_from_training(self, image: np.ndarray, width_pixels: int, height_pixels: int) -> Optional[float]:
+        """
+        Get scale factor from training data by finding similar images.
+        
+        Args:
+            image: Input image
+            width_pixels: Detected package width in pixels
+            height_pixels: Detected package height in pixels
+            
+        Returns:
+            Scale factor if similar training examples found, None otherwise
+        """
+        if not self.training_data:
+            return None
+        
+        height, width = image.shape[:2]
+        image_megapixels = (width * height) / 1_000_000
+        
+        # Find similar training examples
+        # Similarity based on: image resolution and package size ratio
+        package_ratio = width_pixels / height_pixels if height_pixels > 0 else 1.0
+        
+        similar_examples = []
+        for example in self.training_data:
+            # Calculate similarity score
+            mp_diff = abs(example['image_megapixels'] - image_megapixels) / max(image_megapixels, example['image_megapixels'], 1)
+            example_ratio = example['package_width_pixels'] / example['package_height_pixels'] if example['package_height_pixels'] > 0 else 1.0
+            ratio_diff = abs(example_ratio - package_ratio)
+            
+            # Similar if same resolution range and similar package shape
+            if mp_diff < 0.5 and ratio_diff < 0.3:
+                similar_examples.append(example)
+        
+        if similar_examples:
+            # Use average scale factor from similar examples
+            avg_scale = sum(ex['scale_factor'] for ex in similar_examples) / len(similar_examples)
+            logger.info(f"Using training data: {len(similar_examples)} similar examples, scale factor: {avg_scale:.6f}")
+            return avg_scale
+        
+        return None
+    
+    def _calculate_scale_factor(self, image: np.ndarray, contours=None, width_pixels=None, height_pixels=None, use_training=True) -> float:
         """
         Calculate scale factor to convert pixels to real-world measurements.
         
         Tries multiple methods in order of accuracy:
-        1. Automatic credit card detection (if present)
-        2. Improved heuristic based on package size
-        3. Configurable field of view
+        1. Training data (if available and similar examples found)
+        2. Automatic credit card detection (if present)
+        3. Improved heuristic based on package size
+        4. Configurable field of view
         
         Args:
             image: Input image
             contours: Optional list of contours for reference object detection
+            width_pixels: Detected package width in pixels (for training data lookup)
+            height_pixels: Detected package height in pixels (for training data lookup)
+            use_training: Whether to use training data
             
         Returns:
             Scale factor (cm per pixel)
         """
         height, width = image.shape[:2]
         
-        # Method 1: Try to detect credit card for automatic calibration
+        # Method 1: Use training data (learned from previous examples)
+        if use_training and width_pixels and height_pixels:
+            training_scale = self._get_scale_factor_from_training(image, width_pixels, height_pixels)
+            if training_scale is not None:
+                return training_scale
+        
+        # Method 2: Try to detect credit card for automatic calibration
         if contours is not None:
             card_scale = self._detect_credit_card(image, contours)
             if card_scale is not None:
