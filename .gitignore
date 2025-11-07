@@ -55,6 +55,9 @@ Thumbs.db
 logs/
 *.log
 
+# Training data (user-specific, can be large)
+training_data.json
+
 # Uploads (user data - don't commit test images)
 uploads/*
 !uploads/.gitkeep

@@ -124,6 +124,9 @@
             <strong>💡 How it works:</strong><br>
             Upload an image of a package where you know the exact dimensions. 
             The app will learn from this to improve accuracy for future scans.
+            {% if training_count is defined %}
+            <br><br><strong>📊 Current training examples: {{ training_count }}</strong>
+            {% endif %}
         </div>
         
         <form action="/train" method="post" enctype="multipart/form-data" id="trainForm">

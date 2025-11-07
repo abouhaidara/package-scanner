@@ -63,7 +63,9 @@ def index():
 def train():
     """Add training data with known dimensions."""
     if request.method == 'GET':
-        return render_template('train.html')
+        # Show current training data count
+        training_count = len(scanner.training_data)
+        return render_template('train.html', training_count=training_count)
     
     # Handle POST request
     if 'file' not in request.files:
@@ -107,10 +109,14 @@ def train():
             depth_cm = depth_in * 2.54
             
             # Add training example
+            logger.info(f"Adding training example: {filepath}, dimensions: {width_cm}cm × {height_cm}cm × {depth_cm}cm")
             if scanner.add_training_example(filepath, width_cm, height_cm, depth_cm):
-                flash(f'Training example added successfully! Total examples: {len(scanner.training_data)}', 'success')
+                total_examples = len(scanner.training_data)
+                logger.info(f"Training example added successfully! Total: {total_examples}")
+                flash(f'✅ Training example added successfully! Total examples: {total_examples}', 'success')
             else:
-                flash('Failed to add training example. Please check the image.', 'error')
+                logger.error("Failed to add training example")
+                flash('❌ Failed to add training example. Please check the image and try again.', 'error')
             
             return redirect(url_for('train'))
             
