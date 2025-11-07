@@ -293,27 +293,8 @@
             </button>
             
             <div style="margin: 20px 0; padding: 15px; background: #f8f9ff; border-radius: 10px; font-size: 0.9em; color: #666;">
-                <strong>💡 Tip for Better Accuracy:</strong><br>
-                Place a credit card next to the package for automatic calibration, or leave blank for automatic estimation.
-            </div>
-            
-            <div style="margin: 15px 0; display: none;" id="knownDimensionDiv">
-                <label for="knownDimension" style="display: block; margin-bottom: 8px; color: #666; font-weight: 500;">
-                    Optional: Enter a known dimension (inches) for better accuracy:
-                </label>
-                <input type="number" 
-                       id="knownDimension" 
-                       name="known_dimension" 
-                       step="0.1" 
-                       min="0.1" 
-                       max="100"
-                       placeholder="e.g., 12 (if you know the width)"
-                       style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 1em;">
-                <select id="dimensionType" name="dimension_type" style="width: 100%; margin-top: 8px; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 1em;">
-                    <option value="width">Width</option>
-                    <option value="height">Height</option>
-                </select>
-                <small style="display: block; margin-top: 5px; color: #999;">Leave blank for automatic detection</small>
+                <strong>💡 For Best Accuracy:</strong><br>
+                Simply place a <strong>credit card</strong> next to the package in your photo. The app will automatically detect it and use it for accurate measurements. No setup needed!
             </div>
             
             <div class="loading" id="loading">
@@ -397,9 +378,6 @@
                 submitBtn.style.display = 'inline-block';
                 chooseFileBtn.style.display = 'none';
                 uploadArea.style.cursor = 'default';
-                
-                // Show optional dimension input
-                document.getElementById('knownDimensionDiv').style.display = 'block';
             }
         }
         

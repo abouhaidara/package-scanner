@@ -1,1 +1,28 @@
-[]
+[
+  {
+    "image_path": "uploads/the-home-depot-moving-boxes-hdsmbox10-64_600.jpg",
+    "image_width": 600,
+    "image_height": 600,
+    "package_width_pixels": 461,
+    "package_height_pixels": 423,
+    "package_depth_pixels": 338.40000000000003,
+    "actual_width_cm": 25.4,
+    "actual_height_cm": 40.64,
+    "actual_depth_cm": 30.48,
+    "scale_factor": 0.07558663200053332,
+    "image_megapixels": 0.36
+  },
+  {
+    "image_path": "uploads/the-home-depot-moving-boxes-lbx-e1_600.jpg",
+    "image_width": 600,
+    "image_height": 600,
+    "package_width_pixels": 191,
+    "package_height_pixels": 124,
+    "package_depth_pixels": 99.2,
+    "actual_width_cm": 40.64,
+    "actual_height_cm": 66.04,
+    "actual_depth_cm": 38.1,
+    "scale_factor": 0.372677757135619,
+    "image_megapixels": 0.36
+  }
+]
