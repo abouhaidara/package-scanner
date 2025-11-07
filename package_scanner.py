@@ -83,18 +83,35 @@ class PackageVolumeScanner:
             # Apply Gaussian blur to reduce noise
             blurred = cv2.GaussianBlur(gray, (5, 5), 0)
             
-            # Apply edge detection
-            edges = cv2.Canny(blurred, 50, 150)
+            # Try adaptive threshold for better handling of varying lighting
+            # This adapts to local lighting conditions, better than global threshold
+            adaptive_thresh = cv2.adaptiveThreshold(
+                blurred, 
+                255, 
+                cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+                cv2.THRESH_BINARY, 
+                11, 
+                2
+            )
             
-            # Find contours
-            contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            # Apply edge detection on adaptive threshold (better for varying lighting)
+            edges_adaptive = cv2.Canny(adaptive_thresh, 50, 150)
             
-            # Find the largest contour (assuming it's the package)
-            if not contours:
+            # Also try Canny on original blurred image as fallback
+            edges_original = cv2.Canny(blurred, 50, 150)
+            
+            # Find contours from both methods
+            contours_adaptive, _ = cv2.findContours(edges_adaptive, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            contours_original, _ = cv2.findContours(edges_original, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            
+            # Combine contours and find the largest
+            all_contours = list(contours_adaptive) + list(contours_original)
+            
+            if not all_contours:
                 raise ValueError("No contours found in image")
             
             # Sort contours by area (largest first)
-            sorted_contours = sorted(contours, key=cv2.contourArea, reverse=True)
+            sorted_contours = sorted(all_contours, key=cv2.contourArea, reverse=True)
             largest_contour = sorted_contours[0]
             
             # Try to detect credit card for automatic calibration (check all contours)
@@ -105,12 +122,19 @@ class PackageVolumeScanner:
             epsilon = 0.02 * cv2.arcLength(largest_contour, True)
             approx = cv2.approxPolyDP(largest_contour, epsilon, True)
             
-            # Get bounding rectangle
-            x, y, w, h = cv2.boundingRect(largest_contour)
+            # Use minAreaRect for better handling of rotated packages
+            # This gives us the minimum area rotated rectangle (handles rotation automatically)
+            rect = cv2.minAreaRect(largest_contour)
+            # rect format: ((center_x, center_y), (width, height), angle)
+            width_rect = rect[1][0]
+            height_rect = rect[1][1]
             
-            # Calculate dimensions in pixels
-            width_pixels = w
-            height_pixels = h
+            # Use the larger dimension as length, smaller as width
+            # This automatically handles rotation
+            width_pixels = min(width_rect, height_rect)
+            height_pixels = max(width_rect, height_rect)
+            
+            logger.info(f"Detected package: {width_pixels:.1f}px × {height_pixels:.1f}px (minAreaRect, handles rotation)")
             
             # Estimate depth (assuming roughly cubic package)
             # This is a simplified approach - in practice, you'd need stereo vision or multiple angles
