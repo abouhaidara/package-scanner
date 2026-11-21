@@ -32,7 +32,7 @@ class PackageVolumeScanner:
         """Initialize the scanner with configuration."""
         self.project_id = os.getenv('GOOGLE_CLOUD_PROJECT_ID')
         self.bucket_name = os.getenv('GOOGLE_CLOUD_BUCKET_NAME')
-        self.upload_folder = os.getenv('UPLOAD_FOLDER', 'uploads')
+        self.upload_folder = os.getenv('UPLOAD_FOLDER', '/tmp/uploads' if os.getenv('VERCEL') else 'uploads')
         
         # Reference object dimensions for scale calibration (in cm)
         self.ref_width = float(os.getenv('REFERENCE_OBJECT_WIDTH', '10.0'))

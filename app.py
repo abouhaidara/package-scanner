@@ -29,7 +29,9 @@ app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
 
 # Configuration
-UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER', 'uploads')
+# Vercel's filesystem is read-only except /tmp
+DEFAULT_UPLOAD_FOLDER = '/tmp/uploads' if os.getenv('VERCEL') else 'uploads'
+UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER', DEFAULT_UPLOAD_FOLDER)
 MAX_CONTENT_LENGTH = int(os.getenv('MAX_CONTENT_LENGTH', '16777216'))  # 16MB
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff', 'avif', 'webp'}
 
