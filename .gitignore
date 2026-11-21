@@ -71,3 +71,4 @@ ssl/*.crt
 *.tmp
 *.temp
 .cache/
+.vercel

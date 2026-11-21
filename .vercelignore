@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+uploads/
+logs/
+ssl/
+training_data.json
+*-credentials.json
+*.pem
+*.key
+.DS_Store
+__pycache__/
